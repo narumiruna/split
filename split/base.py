@@ -9,14 +9,15 @@ class Currency(str, Enum):
 
 
 class DebtItem(BaseModel):
-    debtor: str
-    creditors: list[str]
+    creditor: str  # 出錢的
+    debtors: list[str]  # 欠錢的
     description: str
     currency: Currency
+    total_amount: float
 
 
 class Debt(BaseModel):
-    debtor: str
-    creditor: str
+    creditor: str  # 出錢的
+    debtor: str  # 欠錢的
     amount: float
     currency: Currency
