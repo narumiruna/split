@@ -1,9 +1,10 @@
 from itertools import permutations
-from pathlib import Path
 
+import click
 import pandas as pd
 
 from split.base import Currency
+from split.utils import downlaod_google_sheet_from_url
 
 NAMES = [
     # 棒子四人組
@@ -63,8 +64,14 @@ def parse_amount(raw: str) -> float:
     return float(raw.replace(",", ""))
 
 
-def main():
-    f = Path("/Users/narumi/Downloads/2023日本仙台債務表 - 債務列表.csv")
+@click.command()
+@click.option("-c", "--currency", type=click.STRING, default="JPY")
+def main(currency: str):
+    jpytwd = 0.217842
+    url = "https://docs.google.com/spreadsheets/d/1WsJNwAh864X8zVSl9Qk8_GxlZPcRnS5KNwrzM7kjH4I/export?format=csv"
+    f = "data.csv"
+
+    downlaod_google_sheet_from_url(url, f)
     df = pd.read_csv(f)
     df.fillna("", inplace=True)
 
@@ -75,18 +82,20 @@ def main():
     for _, row in df.iterrows():
         creditor = parse_creditor(row["出錢的"])
         debtors = parse_debtor(row["分攤的人"])
-        total_amount = parse_amount(row["總金額"])
+        amount = parse_amount(row["平均"])
 
         currency = Currency(row["貨幣"])
-
-        if currency != Currency.JPY:
-            continue
+        if currency == Currency.JPY:
+            amount *= jpytwd
+        elif currency == Currency.TWD:
+            pass
+        else:
+            raise ValueError(f"Invalid currency: {currency}")
 
         len_debtors = len(debtors)
         if len_debtors == 0:
             continue
 
-        amount = total_amount / len_debtors
         for debtor in debtors:
             if creditor == debtor:
                 continue
