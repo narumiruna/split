@@ -1,3 +1,4 @@
+import copy
 import io
 from enum import Enum
 from itertools import permutations
@@ -148,6 +149,7 @@ for _, row in df.iterrows():
         d[(debtor, creditor)] -= float(amount)
 
 # 計算結算後每個人帳戶的增減
+balances = []
 for name in NAMES:
     balance = 0
     for (creditor, _), amount in d.items():
@@ -160,4 +162,27 @@ for name in NAMES:
     if balance == 0:
         continue
 
+    balances += [[name, balance]]
     print(f"{name}:\t {balance:.2f} TWD")
+
+
+# 按照 balance 排序
+# 欠最多錢的匯給墊最多錢的人
+# 匯完後最後一個就出去
+# 重複做到只剩下一個人
+def how_to_transfer(balances):
+    balances = copy.deepcopy(balances)
+    while len(balances) > 1:
+        balances = sorted(balances, key=lambda x: -x[1])
+
+        richest = balances[0][0]
+        poorest = balances[-1][0]
+        amount = balances[-1][1]
+
+        print(f"{poorest} 匯給 {richest} {-amount:.2f} TWD")
+
+        balances[0][1] += balances[-1][1]
+        balances = balances[:-1]
+
+
+how_to_transfer(balances)
