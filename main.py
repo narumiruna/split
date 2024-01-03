@@ -65,8 +65,8 @@ def parse_amount(raw: str) -> float:
 
 
 @click.command()
-@click.option("-c", "--target-currency", type=click.STRING, default="JPY")
-def main(target_currency: str):
+def main():
+    JPYTWD = 0.216345
     url = "https://docs.google.com/spreadsheets/d/1WsJNwAh864X8zVSl9Qk8_GxlZPcRnS5KNwrzM7kjH4I/export?format=csv"
     f = "data.csv"
 
@@ -84,8 +84,8 @@ def main(target_currency: str):
         amount = parse_amount(row["平均"])
 
         currency = Currency(row["貨幣"])
-        if currency != target_currency:
-            continue
+        if currency == "TWD":
+            amount = amount / JPYTWD
 
         len_debtors = len(debtors)
         if len_debtors == 0:
@@ -120,7 +120,7 @@ def main(target_currency: str):
                 total += amount
         if total == 0:
             continue
-        print(f"{name}: {total} {target_currency}")
+        print(f"{name}: {total} JPY")
 
 
 if __name__ == "__main__":
