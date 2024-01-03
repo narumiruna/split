@@ -98,16 +98,29 @@ def main(target_currency: str):
             d[(creditor, debtor)] += float(amount)
             d[(debtor, creditor)] -= float(amount)
 
-    for (creditor, debtor), amount in d.items():
-        if amount == 0:
-            continue
+    # for (creditor, debtor), amount in d.items():
+    #     if amount == 0:
+    #         continue
 
-        if amount > 0:
-            print(f"{creditor} 借 {debtor}: {amount} {target_currency}")
-        elif amount < 0:
-            print(f"{creditor} 欠 {debtor}: {-amount} {target_currency}")
-        else:
+    #     if amount > 0:
+    #         # print(f"{creditor} 借 {debtor}: {amount} {target_currency}")
+    #         pass
+    #     elif amount < 0:
+    #         print(f"{creditor} 欠 {debtor}: {-amount} {target_currency}")
+    #     else:
+    #         continue
+
+    for name in NAMES:
+        total = 0
+        for (creditor, _), amount in d.items():
+            if amount == 0:
+                continue
+
+            if creditor == name:
+                total += amount
+        if total == 0:
             continue
+        print(f"{name}: {total} {target_currency}")
 
 
 if __name__ == "__main__":
