@@ -1,5 +1,6 @@
 import copy
 import io
+from dataclasses import dataclass
 from enum import Enum
 from itertools import permutations
 from pathlib import Path
@@ -148,6 +149,13 @@ for _, row in df.iterrows():
         d[(creditor, debtor)] += float(amount)
         d[(debtor, creditor)] -= float(amount)
 
+
+@dataclass
+class Balance:
+    name: str
+    value: float
+
+
 # 計算結算後每個人帳戶的增減
 balances = []
 for name in NAMES:
@@ -162,7 +170,7 @@ for name in NAMES:
     if balance == 0:
         continue
 
-    balances += [[name, balance]]
+    balances += [Balance(name=name, value=balance)]
     print(f"{name}:\t {balance:.2f} TWD")
 
 
@@ -170,18 +178,18 @@ for name in NAMES:
 # 欠最多錢的匯給墊最多錢的人
 # 匯完後最後一個就出去
 # 重複做到只剩下一個人
-def how_to_transfer(balances):
+def how_to_transfer(balances: list[Balance]):
     balances = copy.deepcopy(balances)
     while len(balances) > 1:
-        balances = sorted(balances, key=lambda x: -x[1])
+        balances = sorted(balances, key=lambda x: -x.value)
 
-        richest = balances[0][0]
-        poorest = balances[-1][0]
-        amount = balances[-1][1]
+        richest = balances[0].name
+        poorest = balances[-1].name
+        amount = balances[-1].value
 
         print(f"{poorest} 匯給 {richest} {-amount:.2f} TWD")
 
-        balances[0][1] += balances[-1][1]
+        balances[0].value += balances[-1].value
         balances = balances[:-1]
 
 
