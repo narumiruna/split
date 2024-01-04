@@ -1,12 +1,17 @@
 import copy
 import io
 from dataclasses import dataclass
+from datetime import datetime
+from decimal import Decimal, getcontext
 from enum import Enum
 from itertools import permutations
 from pathlib import Path
 
 import pandas as pd
 import requests
+import visafx
+
+getcontext().prec = 28
 
 NAMES = [
     #
@@ -27,9 +32,6 @@ NAMES = [
     "mia",
     "sam",
 ]
-
-# 匯率
-JPYTWD = 0.216345
 
 
 # Google Sheet
@@ -84,10 +86,10 @@ def parse_names(raw: str) -> list[str]:
     return res
 
 
-def parse_float(s: str) -> float:
+def parse_float(s: str) -> Decimal:
     if s == "":
         return 0
-    return float(s.replace(",", ""))
+    return Decimal(s.replace(",", ""))
 
 
 def parse_currency(s: str) -> Currency:
@@ -97,6 +99,10 @@ def parse_currency(s: str) -> Currency:
         raise ValueError(msg)
 
     return Currency(s)
+
+
+def parse_date(s: str) -> datetime:
+    return datetime.strptime(s, "%Y-%m-%d")
 
 
 def check_name(s: str) -> None:
@@ -116,11 +122,17 @@ for _, row in df.iterrows():
     creditor = parse_name(row["出錢的"])
     debtors = parse_names(row["分攤的人"])
     amount = parse_float(row["平均"])
+    date = parse_date(row["日期"])
 
-    # 把台幣轉換成日幣
+    # 把日幣轉換成台幣
     currency = parse_currency(row["貨幣"])
     if currency == Currency.JPY:
-        amount = amount * JPYTWD
+        amount = Decimal(
+            visafx.rates(
+                amount=amount, from_curr="TWD", to_curr="JPY", date=date, fee=0
+            ).convertedAmount.replace(",", "")
+        )
+        # amount = amount * 0.216
 
     # 檢查名字是國手
     check_name(creditor)
@@ -146,8 +158,8 @@ for _, row in df.iterrows():
         if creditor == debtor:
             continue
 
-        d[(creditor, debtor)] += float(amount)
-        d[(debtor, creditor)] -= float(amount)
+        d[(creditor, debtor)] += amount
+        d[(debtor, creditor)] -= amount
 
 
 @dataclass
