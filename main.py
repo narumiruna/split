@@ -127,33 +127,38 @@ for _, row in df.iterrows():
     # 把日幣轉換成台幣
     currency = parse_currency(row["貨幣"])
     if currency == Currency.JPY:
-        amount = Decimal(
-            visafx.rates(
-                amount=amount, from_curr="TWD", to_curr="JPY", date=date, fee=0
-            ).convertedAmount.replace(",", "")
-        )
-        # amount = amount * 0.216
+        # VISA 匯率
+        # rate = Decimal(
+        #     visafx.rates(
+        #         amount=1, from_curr="TWD", to_curr="JPY", date=date, fee=0
+        #     ).convertedAmount.replace(",", "")
+        # )
+        # print(f"{date} 當天的 VISA 匯率是: {rate}")
+        # amount *= rate
+        amount *= Decimal(0.21634513452)
 
     # 檢查名字是國手
     check_name(creditor)
     for debtor in debtors:
         check_name(debtor)
 
+    # 夫妻合併
+    # {"angie": "ben"} 指 angie 的債務和債權都丟給 ben
+    alias = {
+        "angie": "ben",
+        "charissa": "moo",
+        "cindy": "john",
+        "sam": "mia",
+    }
+    if creditor in alias:
+        creditor = alias[creditor]
+
     # 計算誰欠誰多少錢
     for debtor in debtors:
         # 夫妻合併
-        # ("ben", "angie") 指 angie 的債務和債權都丟給 ben
-        pairs = [
-            ("ben", "angie"),
-            ("moo", "charissa"),
-            ("john", "cindy"),
-            ("mia", "sam"),
-        ]
-        for x, y in pairs:
-            if creditor == y:
-                creditor = x
-            if debtor == y:
-                debtor = x
+        if debtor in alias:
+            debtor = alias[debtor]
+
         # 不用計算自己欠自己多少錢
         if creditor == debtor:
             continue
@@ -183,7 +188,7 @@ for name in NAMES:
         continue
 
     balances += [Balance(name=name, value=balance)]
-    print(f"{name}:\t {balance:.2f} TWD")
+    print(f"{name: <6}: {balance: >10.2f} TWD")
 
 
 # 按照 balance 排序
@@ -199,7 +204,7 @@ def how_to_transfer(balances: list[Balance]):
         poorest = balances[-1].name
         amount = balances[-1].value
 
-        print(f"{poorest} 匯給 {richest} {-amount:.2f} TWD")
+        print(f"{poorest: <6} 匯給 {richest: <6} {-amount: >10.2f} TWD")
 
         balances[0].value += balances[-1].value
         balances = balances[:-1]
